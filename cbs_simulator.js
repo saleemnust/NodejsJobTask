@@ -1,15 +1,8 @@
 'use strict';
 
-//var diameter = require('../lib/diameter');
 var diameter = require('./node_modules/diameter/lib/diameter');
-
-
-
-
 var HOST = '127.0.0.1';
-
-//var PORT = 3869;
-var PORT = 4000;
+var PORT = 3869;
 
 var options = {
     //beforeAnyMessage: diameter.logMessage,
@@ -78,18 +71,6 @@ var server = diameter.createServer(options, function(socket) {
         }
         else if (event.message.command === 'AA') 
         {
-/*            for (var i = 0; i < event.response.body.length; i++) {
-                console.log(event.response.body);
-                if (event.response.body[i][0] === "Result-Code") {
-                    if (event.response.body[i][1] === "DIAMETER_SUCCESS") {
-                        console.log("Authorization is successful");
-                        break;
-                    } else
-                    {
-                        sendSTRequest();
-                    }
-                }
-            }*/
             event.response.body = event.response.body.concat([
                 ['Session-Id','dZH7jGEadGog2Uw4'],
                 ['Origin-Host','mfscbs.safarifone.com'],
@@ -122,15 +103,6 @@ var server = diameter.createServer(options, function(socket) {
             ]);
             event.callback(event.response);
         }
-/*    var options = {
-    beforeAnyMessage: diameter.logMessage,
-    afterAnyMessage: diameter.logMessage,
-    //port: PORT,
-    //host: HOST
-};
-    */
-//GLobal variables socket, connection and sessionId,
-
 
     function createDWRequestFromServerSide() {
         var connection = socket.diameterConnection;
@@ -144,9 +116,7 @@ var server = diameter.createServer(options, function(socket) {
     function sendDWRequestFromServerSide() {
         var connection = socket.diameterConnection;
         var DWRequest = createDWRequestFromServerSide();
-        // **************************************************************//
         //        Sending Capabilities-Exchange request
-        // **************************************************************//
         console.log("Sending DWRequest from server side");
         connection.sendRequest(DWRequest).then(function(responseDWR) {
             // handle responseDWR
@@ -160,76 +130,6 @@ var server = diameter.createServer(options, function(socket) {
         });
     }
 
-
-
-
-
-
-/*    const interval = setInterval(function() {
-    sendDWRequestFromServerSide();
-
-     }, 5000);*/
-
-
-        // Example server initiated message
-/*        setTimeout(function() {
-            console.log('Sending server initiated message');
-            var connection = socket.diameterConnection;
-            //var request = connection.createRequest('Diameter Common Messages', 'Capabilities-Exchange');
-            var request = connection.createRequest('Diameter Common Messages', 'Capabilities-Exchange');
-    		request.body = request.body.concat([
-
-
-                ['Session-Id', 'dZH7jGEadGog2Uw4'],
-                ['Origin-Host','mfssdp.safarifone.com'],
-                ['Origin-Realm','www.safarifone.com'],
-                ['Destination-Realm','www.safarifone.com'],
-                ['Client-Request-Id','23mjyrt65m'],
-                ['Diameter-Event-Id', 'qh4bpRn95gCMx1VZ'],
-                ['Auth-Application-Id', '1'],
-
-                ['Auth-Request-Type',1],
-
-                [ 'Subscription-Id', [
-                    [ 'Subscription-Id-Type', 0 ],
-                    [ 'Subscription-Id-Data', new Buffer( '252615100005', 'utf-8' )]
-                ]],
-                [ 'User-Equipment-Info', [
-                    [ 'User-Equipment-Info-Type', 1 ],
-                    [ 'User-Equipment-Info-Value', new Buffer.from( "123456", 'utf-8' )]
-                ]],
-
-                ['User-Name','252615100005'],
-                ['User-Password',new Buffer.from( "1212", 'utf-8' )],
-                ['Service-Type',18],
-                ['IMSI','252615100005'],
-                ['Account-Currency','840'],
-
-                [ 'SDP-System-Info', [
-                    [ 'System-IP',  new Buffer( '192.168.40.100', 'utf-8' ) ],
-                    [ 'System-Secret', new Buffer( '123456', 'utf-8' )]
-                ]],
-
-                [ 'Channel-Info', [
-                    [ 'Channel-Name',  new Buffer('192.168.40.100', 'utf-8' ) ],
-                ]],
-
-
-                [ 'Location-Info-Type', [
-                    [ 'Location-Type',  new Buffer('2', 'utf-8' ) ],
-                    [ 'CELL-ID',  '110' ],
-                    [ 'LAC-ID', '342' ],
-                    [ 'MCC',  new Buffer('252', 'utf-8' ) ],
-                    [ 'NMC',  new Buffer('62', 'utf-8' ) ],
-                ]],
-
-            ]);
-    		connection.sendRequest(request).then(function(response) {
-    			console.log('Got response for server initiated message');
-    		}, function(error) {
-    			console.log('Error sending request: ' + error);
-    		});
-        }, 2000);*/
     });
 
     socket.on('end', function() {
@@ -243,9 +143,3 @@ var server = diameter.createServer(options, function(socket) {
 server.listen(PORT, HOST);
 
 console.log('Started DIAMETER server on ' + HOST + ':' + PORT);
-
-/*
-node diameter-server-example.js
-node diameter-client-example.js
-
-*/
