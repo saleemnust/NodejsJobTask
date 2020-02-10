@@ -1,14 +1,10 @@
 'use strict';
 var starttimeofOverallTestCase = new Date().getTime();
-//var diameter = require('../lib/diameter');
 var diameter = require('./node_modules/diameter/lib/diameter');
 
 //var HOST = '192.168.1.32';
 var HOST = '127.0.0.1';
-
-//var PORT = 3869;
-var PORT = 4000;
-
+var PORT = 3869;
 var options = {
     //beforeAnyMessage: diameter.logMessage,
     //afterAnyMessage: diameter.logMessage,
@@ -19,8 +15,9 @@ var options = {
 var socket = diameter.createConnection(options, function() {});
 var connection = socket.diameterConnection;
 var sessionId = random(1000,2000);
-
-
+var numberOfExecutions = 1;
+var executionCounter = 1;
+console.log('\x1b[33m%s\x1b[0m', "Starting execution from here.");  //yellow
 
 //function to generate a random sessionId
 function random(low, high) {
@@ -33,10 +30,11 @@ function findExecutionTime(start, requestName)
     var time = end - start;
     console.log('Execution time of ' +requestName+': ' + time +"ms\n");  
 }
+const interval = setInterval(function() {
+sendDWRequest(connection);
 
-// **************************************************************//
+ }, 1000);
 //        Creating Capabilities-Exchange request
-// **************************************************************//
 function createCERequest(connection) 
 {
     var request = connection.createRequest("Diameter Common Messages", 'Capabilities-Exchange');
@@ -57,22 +55,15 @@ function createCERequest(connection)
     return request;
 }
 function sendCERequest(connection) {
+
     var CERequest = createCERequest(connection);
-    // **************************************************************//
     //        Sending Capabilities-Exchange request
-    // **************************************************************//
     console.log("Sending Capabilities-Exchange Request");
-    //console.log(CERequest.body);
     var startTimeCER = new Date().getTime();
     connection.sendRequest(CERequest).then(function(responseCER) {
-
-        // handle responseCER
-        //console.log("Response command"+ JSON.stringify(responseCER));
         console.log("Capabilities-Exchange Request Sent");
         if (responseCER.command === 'Capabilities-Exchange') {
             console.log("Capabilities-Exchange Answer received");
-            //console.log(responseCER.body);
-
             for (var i = 0; i < responseCER.body.length; i++) {
                 if (responseCER.body[i][0] === "Result-Code") {
                     if (responseCER.body[i][1] === "DIAMETER_SUCCESS") {
@@ -88,17 +79,14 @@ function sendCERequest(connection) {
                 } 
             }
         }
-        //console.log("Capabilities-Exchange Request sent to the server");
     }, function(error) {
         console.log('Error sending request: ' + error);
-        //sendSTRequest(connection);
     });
 }
 
-// **************************************************************//
 //			    Creating Authentication request  		     //
-// **************************************************************//
 function createAuthenticationRequest(connection) {
+    
     var request = connection.createRequest("NASREQ Application", 'AA');
     request.body = request.body.concat([
         ['Session-Id', sessionId],
@@ -107,11 +95,10 @@ function createAuthenticationRequest(connection) {
         ['Destination-Realm', 'www.safarifone.com'],
         ['Client-Request-Id', '23mjyrt65m'],
         ['Diameter-Event-Id', 'qh4bpRn95gCMx1VZ'],
-        //['Auth-Application-Id', 1],
         ['Auth-Request-Type', 1],
         ['Subscription-Id', [
             ['Subscription-Id-Type', 0],
-            ['Subscription-Id-Data', new Buffer('252615100005', 'utf-8')]
+            ['Subscription-Id-Data', new Buffer.from('252615100005', 'utf-8')]
         ]],
         ['User-Equipment-Info', [
             ['User-Equipment-Info-Type', 1],
@@ -119,15 +106,15 @@ function createAuthenticationRequest(connection) {
         ]],
         ['User-Name', '252615100005'],
         ['User-Password', new Buffer.from("1212", 'utf-8')],
-        ['Service-Type', 18],
-        ['IMSI', '252615100005'],
-        ['Account-Currency', '840'],
+        ['Service-Type', 18], // mmt, 
+        ['IMSI', '252615100005'], 
+        ['Account-Currency', '840'], // for usd
         ['SDP-System-Info', [
-            ['System-IP', new Buffer('192.168.40.100', 'utf-8')],
-            ['System-Secret', new Buffer('123456', 'utf-8')]
+            ['System-IP', new Buffer.from('192.168.40.100', 'utf-8')],
+            ['System-Secret', new Buffer.from('123456', 'utf-8')]
         ]],
         ['Channel-Info', [
-            ['Channel-Name', new Buffer('USSD', 'utf-8')],
+            ['Channel-Name', new Buffer.from('USSD', 'utf-8')],
         ]],
         [ 'Location-Info', [
             [ 'Location-Type',  2],
@@ -135,19 +122,17 @@ function createAuthenticationRequest(connection) {
             [ 'CELL-ID',  110],
             [ 'LAC-ID',  342],
             [ 'MCC',  '1'],
-            [ 'Location-Info-Type',  new Buffer('252', 'utf-8')],
-            [ 'MNC',  new Buffer('62', 'utf-8')]
+            [ 'Location-Info-Type',  new Buffer.from('252', 'utf-8')],
+            [ 'MNC',  new Buffer.from('62', 'utf-8')]
         ]],
     ]);
     return request;
 }
 function sendAuthenticationRequest(connection) {
+    console.log('\x1b[36m%s\x1b[0m', "Execution cycle: "+ executionCounter);  //cyan
     var authenticationRequest = createAuthenticationRequest(connection);
-    // **************************************************************//
     //        Sending Authentication request
-    // **************************************************************//
     console.log("Sending Authentication Request");
-    //console.log(authenticationRequest.body);
     var startTimeAuthentication = new Date().getTime();
     connection.sendRequest(authenticationRequest).then(function(responseAuthentication) {
                 // handle response
@@ -190,16 +175,16 @@ function createAuthorizationRequest(connection) {
     ['Auth-Request-Type', 2],
     ['Service-Context-Id', '123'],
     ['Event-Timestamp', '2540001'],
-    ['Account-Id', 8],
+    ['Account-Id', 8], // 
     ['Receiver-Subscription-Id', [
             ['Subscription-Id-Type', 0],
-            ['Subscription-Id-Data', new Buffer('252617728392', 'utf-8')]
+            ['Subscription-Id-Data', new Buffer.from('252617728392', 'utf-8')]
     ]],
     ['Service-Information', [
         ['Service', [
         ['Service-Id', '6'],
-        ['Service-Code', new Buffer('0006', 'utf-8')],
-        ['Service-Name',  new Buffer('P2P Transfer', 'utf-8')]
+        ['Service-Code', new Buffer.from('0006', 'utf-8')],
+        ['Service-Name',  new Buffer.from('P2P Transfer', 'utf-8')]
         ]],
     ]],
     ['TxAmount', [
@@ -213,16 +198,14 @@ function createAuthorizationRequest(connection) {
     ]],
     ['Service-Type', 18],
     ['Currency-Code', '840'],
-    ['Origin-System-IP',  new Buffer('192.168.99.100', 'utf-8')]
+    ['Origin-System-IP',  new Buffer.from('192.168.99.100', 'utf-8')]
     ]);
     return request;
 }
 
 function sendAuthorizationRequest(connection) {
     var authorizationRequest = createAuthorizationRequest(connection);
-    // **************************************************************//
     //        Sending Authentication request
-    // **************************************************************//
     console.log("Sending Authorization Request");
     //console.log(authorizationRequest.body);
     var startTimeAuthorization = new Date().getTime();
@@ -267,7 +250,7 @@ function createCharingRequest(connection) {
         ['CC-Request-Type',4],
         ['CC-Request-Number','10'],
         ['Service-Context-Id','123'],
-        ['Requested-Action',0], 
+        ['Requested-Action',0], //ECUR, IEC , SCUR
         ['Event-Timestamp','2540001'], 
         ['Service-Exec-Time',322], 
         ['Used-Service-Unit', [
@@ -288,9 +271,7 @@ function createCharingRequest(connection) {
 
 function sendChargingRequest(connection) {
     var chargingRequest = createCharingRequest(connection);
-    // **************************************************************//
     //        Sending Authentication request
-    // **************************************************************//
     console.log("Sending Charging Request"); 
     //console.log(chargingRequest.body);
     var startTimeCharging = new Date().getTime();
@@ -331,9 +312,7 @@ function createDWRequest(connection) {
 }
 function sendDWRequest(connection) {
     var DWRequest = createDWRequest(connection);
-    // **************************************************************//
     //        Sending Capabilities-Exchange request
-    // **************************************************************//
     console.log("Sending DWRequest from client side");
     var startTimeDWR = new Date().getTime();
     connection.sendRequest(DWRequest).then(function(responseDWR) {
@@ -349,8 +328,6 @@ function sendDWRequest(connection) {
     });
 }
 
-
-
 function createSTRequest(connection) {
     var request = connection.createRequest("NASREQ Application", 'Session-Termination');
     request.body = request.body.concat([
@@ -365,23 +342,30 @@ function createSTRequest(connection) {
 }
 function sendSTRequest(connection) {
     var STRequest = createSTRequest(connection);
-    // **************************************************************//
     //		  Sending Capabilities-Exchange request
-    // **************************************************************//
     console.log("Sending Session termination Request");
-
     var startTimeSTR = new Date().getTime();
     connection.sendRequest(STRequest).then(function(responseSTR) {
-        // handle responseSTR
-        //console.log("Response command"+ JSON.stringify(responseSTR));
         if (responseSTR.command === 'Session-Termination') {
-            console.log("Session termination Answer received\n");
+            console.log("Session termination Answer received");
             for (var i = 0; i < responseSTR.body.length; i++) {
                 if (responseSTR.body[i][0] === "Result-Code") {
                     if (responseSTR.body[i][1] === "DIAMETER_SUCCESS") {
                         findExecutionTime(startTimeSTR, "Session-Termination");
                         findExecutionTime(starttimeofOverallTestCase, "overall test case execution");
-                        console.log("Session has been successfully terminated\n");
+                        console.log("Session has been successfully terminated");
+                            if(executionCounter<numberOfExecutions)
+                            {
+                                sendAuthenticationRequest(connection);
+                                executionCounter++;
+                            }
+                            else
+                            {
+                                //close socket and delete DWR timer.
+                                socket.diameterConnection.end();
+                                clearInterval(interval);
+                                break;
+                            }
                         break;
                     }
                     else
@@ -394,32 +378,21 @@ function sendSTRequest(connection) {
     }, function(error) {
         console.log('Error sending request: ' + error);
     });
-
-    //close socket and delete DWR timer.
-    socket.diameterConnection.end();
-    clearInterval(interval);
+    
 }
+function executeCompleteTestCase(callback)
+{
+    sendAuthenticationRequest(connection);
 
-
+}
 
 sendCERequest(connection);
 
-const interval = setInterval(function() {
-sendDWRequest(connection);
-
- }, 5000);
-
-//clearInterval(interval);
-
-
-// **************************************************************//
 //		  Handling server initiated messages:
-// **************************************************************//
 socket.on('diameterMessage', function(event) {
 
     if (event.message.command === 'AA') {
         console.log("Server initiated message received");
-        //console.log(event.response.body);
     }
      else if (event.message.command === 'Device-Watchdog') {
             console.log("Device-Watchdog Response received from server");
@@ -430,13 +403,7 @@ socket.on('diameterMessage', function(event) {
             ]);
             event.callback(event.response);
         }
-    //socket.diameterConnection.end();
 });
 socket.on('error', function(err) {
     console.log(err);
 });
-
-
-
-//npm install -g node-diameter/node-diameter
-//npm install diameter / node-diameter
