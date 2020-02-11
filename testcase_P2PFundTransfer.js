@@ -369,6 +369,7 @@ function sendSTRequest(connection) {
                         findExecutionTime(starttimeofOverallTestCase, "overall test case execution");
                         console.log("Session has been successfully terminated");
                             if(executionCounter<=numberOfExecutions)
+
                             {
                                 sessionId = generateRandomSessionId(1000,2000);
                                 clientRequestId = generateRandomClientRequestId(1000,700000);
