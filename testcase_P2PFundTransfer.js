@@ -2,8 +2,8 @@
 var starttimeofOverallTestCase = new Date().getTime();
 var diameter = require('./node_modules/diameter/lib/diameter');
 
-//var HOST = '192.168.1.32';
-var HOST = '127.0.0.1';
+var HOST = '192.168.1.32';
+//var HOST = '127.0.0.1';
 var PORT = 3869;
 var options = {
     //beforeAnyMessage: diameter.logMessage,
@@ -14,16 +14,30 @@ var options = {
 //GLobal variables socket, connection and sessionId,
 var socket = diameter.createConnection(options, function() {});
 var connection = socket.diameterConnection;
-var sessionId = random(1000,2000);
-var numberOfExecutions = 1;
+var sessionId = generateRandomSessionId(1000,2000);
+var clientRequestId = generateRandomClientRequestId(1000,700000);
+//var diameterEventId = generateRandomDiameterEventId(1000,600000);
+
+var numberOfExecutions = 10;
 var executionCounter = 1;
 console.log('\x1b[33m%s\x1b[0m', "Starting execution from here.");  //yellow
 
 //function to generate a random sessionId
-function random(low, high) {
+function generateRandomSessionId(low, high) {
     var sessionID = Math.random() * (high - low) + low;
     return sessionID.toString();
 }
+//function to generate a random Client request id
+function generateRandomClientRequestId(low, high) {
+    var clientRequestId = Math.random() * (high - low) + low;
+    return clientRequestId.toString();
+}
+//function to generate a random Client request id
+function generateRandomDiameterEventId(low, high) {
+    var diamterEventId = Math.random() * (high - low) + low;
+    return diamterEventId.toString();
+}
+
 function findExecutionTime(start, requestName) 
 {
     var end = new Date().getTime();
@@ -87,14 +101,14 @@ function sendCERequest(connection) {
 //			    Creating Authentication request  		     //
 function createAuthenticationRequest(connection) {
     
-    var request = connection.createRequest("NASREQ Application", 'AA');
+    var request = connection.createRequest("NASREQ Application", 'AA', sessionId);
     request.body = request.body.concat([
-        ['Session-Id', sessionId],
+        //['Session-Id', sessionId],
         ['Origin-Host', 'mfssdp.safarifone.com'],
         ['Origin-Realm', 'www.safarifone.com'],
         ['Destination-Realm', 'www.safarifone.com'],
-        ['Client-Request-Id', '23mjyrt65m'],
-        ['Diameter-Event-Id', 'qh4bpRn95gCMx1VZ'],
+        ['Client-Request-Id', clientRequestId],
+        ['Diameter-Event-Id', generateRandomDiameterEventId(1000,600000)],
         ['Auth-Request-Type', 1],
         ['Subscription-Id', [
             ['Subscription-Id-Type', 0],
@@ -163,14 +177,14 @@ function sendAuthenticationRequest(connection) {
 }
 
 function createAuthorizationRequest(connection) {
-    var request = connection.createRequest("NASREQ Application", 'AA');
+    var request = connection.createRequest("NASREQ Application", 'AA', sessionId);
     request.body = request.body.concat([
-    ['Session-Id', sessionId],
+    //['Session-Id', sessionId],
     ['Origin-Host', 'mfssdp.safarifone.com'],
     ['Origin-Realm', 'www.safarifone.com'],
     ['Destination-Realm', 'www.safarifone.com'],
-    ['Client-Request-Id', '23mjyrt65m'],
-    ['Diameter-Event-Id', 'gHli00G0kvMcvOir'],
+    ['Client-Request-Id', clientRequestId],
+    ['Diameter-Event-Id', generateRandomDiameterEventId(1000,600000)],
     //['Auth-Application-Id', 1],
     ['Auth-Request-Type', 2],
     ['Service-Context-Id', '123'],
@@ -193,11 +207,11 @@ function createAuthorizationRequest(connection) {
                 
                 ['Value-Digits', 2],
                 ['Exponent', 0]
-            ]], 
-       ]],
+            ]],
+            ['Currency-Code', 840]
+        ]],
     ]],
     ['Service-Type', 18],
-    ['Currency-Code', '840'],
     ['Origin-System-IP',  new Buffer.from('192.168.99.100', 'utf-8')]
     ]);
     return request;
@@ -239,14 +253,14 @@ function sendAuthorizationRequest(connection) {
 }
 
 function createCharingRequest(connection) {
-    var request = connection.createRequest("Diameter Credit Control Application", 'Credit-Control');
+    var request = connection.createRequest("Diameter Credit Control Application", 'Credit-Control', sessionId);
     request.body = request.body.concat([
-        ['Session-Id', sessionId],
+        //['Session-Id', sessionId],
         ['Origin-Host', 'mfssdp.safarifone.com'],
         ['Origin-Realm', 'www.safarifone.com'],
         ['Destination-Realm', 'www.safarifone.com'],
-        ['Client-Request-Id','23mjyrt65m'],
-        ['Diameter-Event-Id','8tG2f0qhAlZBXrX3'],
+        ['Client-Request-Id',clientRequestId],
+        ['Diameter-Event-Id',generateRandomDiameterEventId(1000,600000)],
         ['CC-Request-Type',4],
         ['CC-Request-Number','10'],
         ['Service-Context-Id','123'],
@@ -256,14 +270,14 @@ function createCharingRequest(connection) {
         ['Used-Service-Unit', [
             ['CC-Money',[
                 ['Unit-Value',[
-                    
+
                     ['Value-Digits', 2],
-                    ['Exponent', 0],
-                ]], 
-           ]],
+                    ['Exponent', 0]
+                ]],
+                ['Currency-Code', 840]
+            ]],
         ]],
-        ['Currency-Code','840']
-        
+
 
     ]);
     return request;
@@ -329,14 +343,14 @@ function sendDWRequest(connection) {
 }
 
 function createSTRequest(connection) {
-    var request = connection.createRequest("NASREQ Application", 'Session-Termination');
+    var request = connection.createRequest("NASREQ Application", 'Session-Termination', sessionId);
     request.body = request.body.concat([
-        ['Session-Id', sessionId],
+        //['Session-Id', sessionId],
         ['Origin-Host', 'mfssdp.safarifone.com'],
         ['Origin-Realm', 'www.safarifone.com'],
         ['Destination-Realm', 'www.safarifone.com'],
         ['Auth-Application-Id', 1],
-        ['Termination-Cause', 1],
+        ['Termination-Cause', 1]
     ]);
     return request;
 }
@@ -354,8 +368,10 @@ function sendSTRequest(connection) {
                         findExecutionTime(startTimeSTR, "Session-Termination");
                         findExecutionTime(starttimeofOverallTestCase, "overall test case execution");
                         console.log("Session has been successfully terminated");
-                            if(executionCounter<numberOfExecutions)
+                            if(executionCounter<=numberOfExecutions)
                             {
+                                sessionId = generateRandomSessionId(1000,2000);
+                                clientRequestId = generateRandomClientRequestId(1000,700000);
                                 sendAuthenticationRequest(connection);
                                 executionCounter++;
                             }
