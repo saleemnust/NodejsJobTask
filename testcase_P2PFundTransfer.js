@@ -341,7 +341,6 @@ function sendDWRequest(connection) {
         console.log('Error sending request: ' + error);
     });
 }
-
 function createSTRequest(connection) {
     var request = connection.createRequest("NASREQ Application", 'Session-Termination', sessionId);
     request.body = request.body.concat([
